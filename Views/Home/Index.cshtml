@@ -1,0 +1,191 @@
+﻿@model IEnumerable<MySampleProject.Models.Document>
+@{
+    ViewBag.Title = "Document Maintenance";
+}
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>@ViewBag.Title</h1>
+            </hgroup>
+        </div>
+    </section>
+}
+<p id="rData">@ViewBag.Message
+</p>
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "theform" }))
+{
+    @Html.ValidationSummary(true)
+    if (Model.Count() < 1)
+    {
+    <h1>
+        No Records Found</h1>
+    }
+    else
+    {
+    <table>
+        <tr>
+            <th>
+            </th>
+            <th>
+                @Html.DisplayNameFor(m => m.First().Title) &nbsp;
+            </th>
+            <th>
+                @Html.DisplayNameFor(m => m.First().Description) &nbsp;
+            </th>
+            <th>
+                @Html.DisplayNameFor(m => m.First().Author) &nbsp;
+            </th>
+            <th>
+                @Html.DisplayNameFor(m => m.First().PubDate) &nbsp;
+            </th>
+        </tr>
+        @foreach (var m in Model)
+        {
+            
+            <tr id="tr@(m.DocumentId)" >@*
+                *@
+                <td>
+                    <input type="button" id="EditDoc@(m.DocumentId)" value="Edit" onclick="EditMe(@m.DocumentId)" />
+                    @Html.HiddenFor(modelItem => m.DocumentId)
+                </td>
+                <td>@Html.TextBoxFor(modelItem => m.Title, new { id = "m_Title" + m.DocumentId, disabled = "disabled", style = "width:170px;" })
+                    @Html.ValidationMessageFor(modelItem => m.Title)
+                </td>
+                <td>@Html.TextBoxFor(modelItem => m.Description, new { id = "m_Description" + m.DocumentId, disabled = "disabled" })
+                    @Html.ValidationMessageFor(modelItem => m.Description)
+                </td>
+                <td>@Html.TextBoxFor(modelItem => m.Author, new { id = "m_Author" + m.DocumentId, disabled = "disabled", style = "width:100px;" })
+                    @Html.ValidationMessageFor(modelItem => m.Author)
+                </td>
+                <td>@Html.TextBoxFor(modelItem => m.PubDate, new { id = "m_PubDate" + m.DocumentId, Value = m.PubDate.ToString("M/d/yyyy"), disabled = "disabled", style = "width:100px;" })
+                    @Html.ValidationMessageFor(modelItem => m.PubDate)
+                </td>
+            </tr>
+        }
+        <tr id="trAdd">
+            <td>
+                <input type="submit" value="Add" />
+            </td>
+                <td> @Html.ValidationMessageFor(m => m.First().Title)
+                    @Html.TextBoxFor(m => m.First().Title, new { Value = "", style = "width:170px;" })
+                </td>
+                <td>@Html.ValidationMessageFor(m => m.First().Description)
+                @Html.TextBoxFor(m => m.First().Description, new { Value = "" })
+                </td>
+                <td>@Html.ValidationMessageFor(m => m.First().Author)
+                @Html.TextBoxFor(m => m.First().Author, new { Value = "", style = "width:100px;" })
+                </td>
+                <td>@Html.ValidationMessageFor(m => m.First().PubDate)
+                @Html.TextBoxFor(m => m.First().PubDate, new { Value = "", style = "width:100px;" })
+                   
+                </td>
+        </tr>
+        <tr>
+            <td colspan="5"><a id="anchorAddDoc" href="#">Add Document</a>
+            <input type="hidden" id="txtHasErrors" value="@ViewBag.InsertErrors" />
+            </td>
+        </tr>
+    </table>
+
+    }
+
+}
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        if ($("#txtHasErrors").val() != "true") {
+            $("#trAdd").hide();
+        }
+
+        $("#anchorAddDoc").click(function () {
+            resetTextBox();
+            $("#trAdd").show();
+        });
+
+        $("td").click(function () {
+            var trId = $(this).closest("tr").attr("id");
+            $("#theform input[type=text]").each(function () {
+
+                if (trId == $(this).closest("tr").attr("id")) {
+                    $(this).removeAttr("disabled");
+                }
+                else {
+                    $(this).attr("disabled", "disabled");
+                }
+
+            });
+            $("#theform input[type=button]").each(function () {
+
+                if (trId == $(this).closest("tr").attr("id")) {
+                    $(this).val("Save");
+                }
+                else {
+                    $(this).val("Edit");
+                }
+
+            });
+            $(this).children("input").focus();
+        });
+
+
+
+    });
+
+    function EditMe(id) {
+
+        $("#trAdd").hide();
+        if ($("#EditDoc" + id).val() == "Save") {
+            saveData(id);
+            }
+        else {
+            resetTextBox();
+            $("#EditDoc" + id).val("Save");
+            $("#m_Title" + id).removeAttr("disabled");
+            $("#m_Description" + id).removeAttr("disabled");
+            $("#m_PubDate" + id).removeAttr("disabled");
+            $("#m_DocumentId" + id).removeAttr("disabled");
+            $("#m_Author" + id).removeAttr("disabled");
+        }
+
+    }
+
+    function saveData(id) {
+        var url = "/Home/UpdateData";
+        var title = $("#m_Title" + id).val();
+        var description = $("#m_Description" + id).val();
+        var pubDate = $("#m_PubDate" + id).val();
+        var documentId = id;
+        var author = $("#m_Author" + id).val();
+        $.post(url, { DocumentId: documentId, Title: title, Description: description, PubDate: pubDate, Author: author }, function (data) {
+            $("#rData").html(data);
+            if ($("#rData").html().indexOf("*") > -1) {
+                $("#rData").removeClass("message-success");
+                $("#rData").addClass("message-error");
+            }
+            else {
+                $("#rData").removeClass("message-error");
+                $("#rData").addClass("message-success");
+                resetTextBox();
+                
+            }
+
+        });
+    }
+
+    function resetTextBox() {
+        $("input").each(function () {
+            var trId = $(this).closest("tr").attr("id");
+            if (trId != "trAdd") {
+                if ($(this).attr("type") == "text") {
+                    $(this).attr("disabled", "disabled");
+                }
+                if ($(this).attr("type") == "button") {
+                    $(this).val("Edit");
+                }
+            }
+        });
+    }
+
+</script>
